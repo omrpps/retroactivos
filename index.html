@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retroactivos - Juegos de Guerra</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            background: #000;
+            color: #00ff00;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            text-align: center;
+            background: #111;
+            padding: 20px 0;
+            border-bottom: 2px solid #00ff00;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .terminal {
+            width: 80%;
+            max-width: 800px;
+            background: #222;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 30px;
+            overflow-y: auto;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .terminal p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+
+        .input-line {
+            margin-top: 20px;
+            display: flex;
+            gap: 5px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px;
+            font-family: inherit;
+        }
+
+        button {
+            background: #00ff00;
+            border: none;
+            color: #000;
+            padding: 5px 10px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #007700;
+        }
+
+        .dialogue {
+            margin-top: 20px;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dialogue p {
+            margin: 5px 0;
+        }
+
+        a {
+            color: #ff0000;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #111;
+            color: #00ff00;
+            padding: 15px;
+            text-align: center;
+            border-top: 2px solid #00ff00;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cookie-banner button {
+            margin: 5px;
+            padding: 5px 10px;
+            background: #00ff00;
+            border: none;
+            color: #000;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .cookie-banner button:hover {
+            background: #007700;
+        }
+
+        .cookie-settings, .privacy-policy, .snake-game {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -20%);
+            background: #222;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .cookie-settings button, .privacy-policy button, .snake-game button {
+            margin-top: 15px;
+        }
+
+        .snake-game canvas {
+            border: 1px solid #00ff00;
+            background: #111;
+        }
+
+        #scores {
+            margin-bottom: 10px;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .terminal button {
+            display: block;
+            margin: 20px auto 0;
+        }
+    </style>
+</head>
+<body onload="initializeConnection()">
+    <header>
+        <h1>Retroactivos</h1>
+        <p>Un tributo retro inspirado en 'Juegos de Guerra'</p>
+    </header>
+
+    <div class="terminal">
+        <p>BIENVENIDO AL SISTEMA RETROACTIVOS</p>
+        <div class="dialogue" id="dialogue-box"></div>
+        <div class="input-line">
+            <input id="command-input" type="text" placeholder="Escribe tu respuesta" onkeypress="handleKeyPress(event)">
+            <button onclick="processDialogue()">Enviar</button>
+        </div>
+        <button onclick="showSnakeGame()">Jugar Snake</button>
+    </div>
+
+    <div class="cookie-banner" id="cookie-banner">
+        <p>Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas su uso. Para más información, consulta nuestra <a href="#" onclick="showPrivacyPolicy()">Política de Privacidad</a>.</p>
+        <div>
+            <button onclick="acceptCookies()">Aceptar</button>
+            <button onclick="showCookieSettings()">Configurar</button>
+        </div>
+    </div>
+
+    <div class="cookie-settings" id="cookie-settings">
+        <p><strong>Configuración de Cookies</strong></p>
+        <p>Selecciona las cookies que deseas activar:</p>
+        <form>
+            <label><input type="checkbox" id="essential-cookies" checked disabled> Cookies esenciales (requeridas)</label><br>
+            <label><input type="checkbox" id="analytics-cookies"> Cookies analíticas</label><br>
+            <label><input type="checkbox" id="marketing-cookies"> Cookies de marketing</label><br>
+        </form>
+        <button onclick="saveCookieSettings()">Guardar</button>
+        <button onclick="closeCookieSettings()">Cancelar</button>
+    </div>
+
+    <div class="privacy-policy" id="privacy-policy">
+        <p><strong>Política de Privacidad</strong></p>
+        <p>1. Este sitio utiliza cookies para mejorar la experiencia del usuario y análisis.</p>
+        <p>2. Los datos recopilados se procesan de forma anónima y nunca se compartirán sin consentimiento.</p>
+        <p>3. Tienes derecho a acceder, modificar y eliminar tus datos personales.</p>
+        <p>4. Para más detalles o consultas, contacta a: <a href="mailto:retroactivos72@gmail.com">retroactivos72@gmail.com</a> o en nuestro Twitter: <a href="https://x.com/retroactivos72" target="_blank">@retroactivos72</a>.</p>
+        <button onclick="closePrivacyPolicy()">Cerrar</button>
+    </div>
+
+    <div class="snake-game" id="snake-game">
+        <p><strong>Snake Game</strong></p>
+        <div id="scores">
+            <p>Puntuación: <span id="current-score">0</span></p>
+            <p>Récord: <span id="high-score">0</span></p>
+        </div>
+        <canvas id="gameCanvas" width="300" height="300"></canvas>
+        <p>Usa el teclado o toca la pantalla para controlar la serpiente.</p>
+        <button onclick="closeSnakeGame()">Cerrar</button>
+    </div>
+
+    <footer>
+        <p>
+            Desarrollado por omrpps - <a href="https://www.linkedin.com/in/oscar-martinez-43327686/" target="_blank">Twitter</a> | <a href="mailto:omrpps@gmail.com">Correo</a>
+        </p><p>
+            Contacto Retroactivos - <a href="https://x.com/retroactivos72" target="_blank">Twitter</a> | <a href="mailto:retroactivos72@gmail.com">Correo</a>
+        </p>
+    </footer>
+
+    <audio id="beep" class="sound-effect" src="sound/beep.mp3"></audio>
+
+    <script>
+        // Incluye aquí el script proporcionado anteriormente.
+        const dialogueBox = document.getElementById('dialogue-box');
+const cookieBanner = document.getElementById('cookie-banner');
+const cookieSettings = document.getElementById('cookie-settings');
+const privacyPolicy = document.getElementById('privacy-policy');
+const snakeGame = document.getElementById('snake-game');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let snake;
+let food;
+let dx;
+let dy;
+let gameLoop;
+let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
+
+function initializeConnection() {
+    addDialogue("Sistema", "Conectando al servidor...");
+    setTimeout(() => {
+        addDialogue("Sistema", "Conexión establecida. Bienvenido, humano.");
+    }, 3000);
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        processDialogue();
+    }
+}
+
+function processDialogue() {
+    const input = document.getElementById('command-input');
+    const command = input.value.trim().toLowerCase();
+    const beep = document.getElementById('beep');
+
+    beep.play();
+    clearDialogue();
+
+    if (command.includes('ayuda')) {
+        addDialogue("WOPR", "Perfecto, ¿quieres información sobre nuestros juegos, reseñas o noticias?");
+    } else if (command.includes('juegos')) {
+        addDialogue("WOPR", "Tenemos tres proyectos destacados:");
+        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/pentio' target='_blank'>Pentio</a>");
+        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/the-last-magic-forest' target='_blank'>The Last Magic Forest</a>");
+        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/time' target='_blank'>Time (Cancelado)</a>");
+    } else if (command.includes('reseñas')) {
+        addDialogue("WOPR", "Puedes leer reseñas de nuestros proyectos aquí:");
+        addDialogue("WOPR", "- Ready and Play: <a href='https://www.readyandplay.com/the-last-magic-forest-lo-nuevo-de-retroactivos/' target='_blank'>Ready and Play</a>");
+        addDialogue("WOPR", "- Indie Retro News: <a href='https://www.indieretronews.com/2018/05/the-last-magic-forest-magical-kid-wiz.html' target='_blank'>Indie Retro News</a>");
+        addDialogue("WOPR", "- MSX Blog: <a href='https://www.msxblog.es/the-last-magic-forest-un-tributo-a-magical-kid-wiz/' target='_blank'>MSX Blog</a>");
+        addDialogue("WOPR", "- Retroorama: <a href='https://retroorama.blogspot.com/2018/11/indie-review-last-magic-forest.html' target='_blank'>Retroorama</a>");
+        addDialogue("WOPR", "- Retromaniac Magazine: <a href='https://www.retromaniacmagazine.com/2018/05/the-last-magic-forest-un-pequeno.html' target='_blank'>Retromaniac Magazine</a>");
+        addDialogue("WOPR", "- Postureo Cántabro: <a href='https://postureocantabro.com/pentio-el-videojuego-de-las-guerras-cantabras/' target='_blank'>Postureo Cántabro</a>");
+    } else if (command.includes('noticias')) {
+        addDialogue("WOPR", "Consulta las últimas noticias sobre Retroactivos:");
+        addDialogue("WOPR", "- El Diario Montañés: <a href='https://www.eldiariomontanes.es/tecnologia/videojuegos-serio-20170908120644-nt.html' target='_blank'>Videojuegos en Serio</a>");
+        addDialogue("WOPR", "- El Diario Montañés: <a href='https://www.eldiariomontanes.es/tecnologia/seis-estudios-retratan-20170908122221-nt.html' target='_blank'>Seis Estudios Retratan</a>");
+        addDialogue("WOPR", "- Cantabria Económica: <a href='https://www.cantabriaeconomica.com/empresas/la-industria-cantabra-del-videojuego-se-une-para-crecer/' target='_blank'>La Industria del Videojuego en Cantabria</a>");
+    } else if (command.includes('adios')) {
+        addDialogue("WOPR", "Adiós, humano. ¡Gracias por explorar Retroactivos!");
+    } else if (command.includes('privacidad')) {
+        showPrivacyPolicy();
+    } else {
+        addDialogue("WOPR", "No entiendo tu respuesta. Prueba con: 'juegos', 'reseñas', 'noticias', 'adios', 'ayuda' o 'privacidad'.");
+    }
+
+    input.value = '';
+}
+
+function addDialogue(speaker, text) {
+    const newLine = document.createElement('p');
+    newLine.innerHTML = `<strong>${speaker}:</strong> ${text}`;
+    dialogueBox.appendChild(newLine);
+    dialogueBox.scrollTop = dialogueBox.scrollHeight;
+}
+
+function clearDialogue() {
+    dialogueBox.innerHTML = '';
+}
+
+function showPrivacyPolicy() {
+    privacyPolicy.style.display = 'block';
+}
+
+function closePrivacyPolicy() {
+    privacyPolicy.style.display = 'none';
+}
+
+function acceptCookies() {
+    cookieBanner.style.display = 'none';
+    addDialogue("WOPR", "Gracias por aceptar las cookies. Disfruta navegando por Retroactivos.");
+}
+
+function showCookieSettings() {
+    cookieSettings.style.display = 'block';
+}
+
+function closeCookieSettings() {
+    cookieSettings.style.display = 'none';
+}
+
+function saveCookieSettings() {
+    const analytics = document.getElementById('analytics-cookies').checked;
+    const marketing = document.getElementById('marketing-cookies').checked;
+
+    let message = 'Has actualizado tus preferencias de cookies:\n';
+    message += `- Cookies analíticas: ${analytics ? 'Activadas' : 'Desactivadas'}\n`;
+    message += `- Cookies de marketing: ${marketing ? 'Activadas' : 'Desactivadas'}\n`;
+
+    alert(message);
+    closeCookieSettings();
+}
+
+function showSnakeGame() {
+    snakeGame.style.display = 'block';
+    initializeSnakeGame();
+}
+
+function closeSnakeGame() {
+    snakeGame.style.display = 'none';
+    clearInterval(gameLoop);
+}
+
+function initializeSnakeGame() {
+    snake = [{ x: 150, y: 150 }];
+    food = { x: 0, y: 0 };
+    dx = 10;
+    dy = 0;
+    score = 0;
+
+    document.getElementById('current-score').innerText = score;
+    document.getElementById('high-score').innerText = highScore;
+
+    placeFood();
+    gameLoop = setInterval(updateGame, 100);
+
+    document.addEventListener('keydown', changeDirection);
+    canvas.addEventListener('click', moveSnakeTouch);
+}
+
+function updateGame() {
+    moveSnake();
+    if (checkCollision()) {
+        alert(`¡Game Over!\nPuntuación: ${score}\nRécord: ${highScore}`);
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+        }
+        closeSnakeGame();
+    }
+    drawGame();
+
+    document.getElementById('current-score').innerText = score;
+    document.getElementById('high-score').innerText = highScore;
+}
+
+function moveSnake() {
+    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        placeFood();
+    } else {
+        snake.pop();
+    }
+}
+
+function checkCollision() {
+    const head = snake[0];
+    return (
+        head.x < 0 || head.x >= canvas.width ||
+        head.y < 0 || head.y >= canvas.height ||
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+    );
+}
+
+function placeFood() {
+    food.x = Math.floor(Math.random() * (canvas.width / 10)) * 10;
+    food.y = Math.floor(Math.random() * (canvas.height / 10)) * 10;
+}
+
+function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#00ff00';
+    snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, 10, 10);
+    });
+
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(food.x, food.y, 10, 10);
+}
+
+function changeDirection(event) {
+    const key = event.key;
+
+    if (key === 'ArrowUp' && dy === 0) {
+        dx = 0;
+        dy = -10;
+    } else if (key === 'ArrowDown' && dy === 0) {
+        dx = 0;
+        dy = 10;
+    } else if (key === 'ArrowLeft' && dx === 0) {
+        dx = -10;
+        dy = 0;
+    } else if (key === 'ArrowRight' && dx === 0) {
+        dx = 10;
+        dy = 0;
+    }
+}
+
+function moveSnakeTouch(event) {
+    // Implementación futura para controles táctiles
+    const rect = canvas.getBoundingClientRect();
+    const touchX = event.clientX - rect.left; // Coordenada X del toque relativo al canvas
+    const touchY = event.clientY - rect.top; // Coordenada Y del toque relativo al canvas
+
+    const head = snake[0];
+
+    // Detectar la dirección del toque respecto a la cabeza de la serpiente
+    const diffX = touchX - head.x;
+    const diffY = touchY - head.y;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Movimiento horizontal
+        if (diffX > 0 && dx === 0) {
+            dx = 10;
+            dy = 0;
+        } else if (diffX < 0 && dx === 0) {
+            dx = -10;
+            dy = 0;
+        }
+    } else {
+        // Movimiento vertical
+        if (diffY > 0 && dy === 0) {
+            dx = 0;
+            dy = 10;
+        } else if (diffY < 0 && dy === 0) {
+            dx = 0;
+            dy = -10;
+        }
+    }
+}
+
+// Agregar el evento táctil al canvas
+canvas.addEventListener('touchstart', (event) => {
+    event.preventDefault(); // Prevenir scrolling mientras se juega
+    const touch = event.touches[0];
+    moveSnakeTouch(touch);
+});
+
+    </script>
+</body>
+</html>
