@@ -1,487 +1,584 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <link rel="icon" href="images/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retroactivos - Juegos de Guerra</title>
+    <title>Retroactivos BBS - Juegos de Guerra</title>
     <style>
+        :root {
+            --term-color: #33ff00;
+            --term-bg: #050505;
+            --term-glow: 0 0 10px rgba(51, 255, 0, 0.5), 0 0 20px rgba(51, 255, 0, 0.3);
+            --term-dark: #0f3f0f;
+        }
+
         body {
             margin: 0;
-            font-family: 'Courier New', Courier, monospace;
-            background: #000;
-            color: #00ff00;
+            font-family: 'VT323', 'Courier New', Courier, monospace;
+            font-size: 1.3rem;
+            background: var(--term-bg);
+            color: var(--term-color);
+            height: 100vh;
+            overflow: hidden;
+            text-shadow: 0 0 3px rgba(51, 255, 0, 0.7);
+        }
+
+        /* CRT Background effects */
+        .crt-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(51, 255, 0, 0.1) 50%, rgba(0, 0, 0, 0) 100%);
+            position: absolute;
+            z-index: 101;
+            bottom: 100%;
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% {
+                transform: translateY(0vh);
+            }
+
+            100% {
+                transform: translateY(150vh);
+            }
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            position: relative;
+            z-index: 10;
+            box-sizing: border-box;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .screen::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.4) 100%);
+            pointer-events: none;
+            z-index: 90;
         }
 
         header {
             width: 100%;
             text-align: center;
-            background: #111;
-            padding: 20px 0;
-            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed var(--term-dark);
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
-        header h1 {
+        .text-logo {
+            font-size: clamp(3rem, 8vw, 6rem);
             margin: 0;
-            font-size: 2.5em;
-            text-shadow: 0 0 5px #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px rgba(51, 255, 0, 0.8), 0 0 20px rgba(51, 255, 0, 0.4);
+            font-weight: normal;
+        }
+
+        header p {
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 5px;
+            color: #ccc;
         }
 
         .terminal {
-            width: 80%;
-            max-width: 800px;
-            background: #222;
-            border: 2px solid #00ff00;
-            border-radius: 5px;
-            padding: 15px;
-            margin-top: 30px;
-            overflow-y: auto;
-            min-height: 400px;
-            position: relative;
-        }
-
-        .terminal p {
-            margin: 5px 0;
-            line-height: 1.5;
-        }
-
-        .input-line {
-            margin-top: 20px;
-            display: flex;
-            gap: 5px;
-        }
-
-        input[type="text"] {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
             flex-grow: 1;
-            background: #000;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            padding: 5px;
-            font-family: inherit;
-        }
-
-        button {
-            background: #00ff00;
-            border: none;
-            color: #000;
-            padding: 5px 10px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #007700;
+            display: flex;
+            flex-direction: column;
         }
 
         .dialogue {
-            margin-top: 20px;
-            padding: 10px;
-            background: #111;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            max-height: 200px;
-            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 15px;
+            margin-bottom: 20px;
         }
 
         .dialogue p {
-            margin: 5px 0;
+            margin: 10px 0;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        /* Custom scrollbar for CRT */
+        ::-webkit-scrollbar {
+            width: 12px;
+            z-index: 150;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
+            border-left: 2px solid var(--term-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--term-dark);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--term-color);
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            font-size: 1.2em;
+            position: relative;
+            margin-top: 20px;
+            background: #000;
+            padding: 10px;
+            border: 1px dashed var(--term-color);
+        }
+
+        .prompt {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        #command-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .fake-input {
+            flex-grow: 1;
+            min-height: 1.2em;
+            display: inline-block;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: var(--term-color);
+            vertical-align: bottom;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        button.bbs-btn {
+            background: transparent;
+            border: 2px solid var(--term-color);
+            color: var(--term-color);
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 1em;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(51, 255, 0, 0.2);
+            display: block;
+            margin: 30px auto;
+            position: relative;
+            z-index: 50;
+        }
+
+        button.bbs-btn:hover {
+            background: var(--term-color);
+            color: var(--term-bg);
+            box-shadow: var(--term-glow);
         }
 
         a {
-            color: #ff0000;
+            color: #ffff00;
             text-decoration: none;
+            border-bottom: 1px dotted #ffff00;
+            position: relative;
+            z-index: 50;
         }
 
         a:hover {
-            text-decoration: underline;
+            background: #ffff00;
+            color: var(--term-bg);
+            text-decoration: none;
+        }
+
+        /* Modal Styles Overlay */
+        .cookie-banner,
+        .cookie-settings,
+        .privacy-policy,
+        .snake-game {
+            border: 4px double var(--term-color);
+            background: #050a05;
+            color: var(--term-color);
+            box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(51, 255, 0, 0.2);
+            position: relative;
+            z-index: 1000;
         }
 
         .cookie-banner {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #111;
-            color: #00ff00;
-            padding: 15px;
-            text-align: center;
-            border-top: 2px solid #00ff00;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .cookie-banner button {
-            margin: 5px;
-            padding: 5px 10px;
-            background: #00ff00;
-            border: none;
-            color: #000;
-            cursor: pointer;
+        .cookie-banner button,
+        .cookie-settings button,
+        .privacy-policy button,
+        .snake-game button {
+            background: transparent;
+            border: 1px solid var(--term-color);
+            color: var(--term-color);
+            padding: 8px 15px;
             font-family: inherit;
+            cursor: pointer;
+            margin-left: 10px;
+            text-transform: uppercase;
         }
 
-        .cookie-banner button:hover {
-            background: #007700;
+        .cookie-banner button:hover,
+        .cookie-settings button:hover,
+        .privacy-policy button:hover,
+        .snake-game button:hover {
+            background: var(--term-color);
+            color: var(--term-bg);
         }
 
-        .cookie-settings, .privacy-policy, .snake-game {
+        .cookie-settings,
+        .privacy-policy,
+        .snake-game {
             display: none;
             position: fixed;
-            top: 20%;
+            top: 50%;
             left: 50%;
-            transform: translate(-50%, -20%);
-            background: #222;
-            border: 2px solid #00ff00;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 1000;
-        }
-
-        .cookie-settings button, .privacy-policy button, .snake-game button {
-            margin-top: 15px;
+            transform: translate(-50%, -50%);
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .snake-game canvas {
-            border: 1px solid #00ff00;
-            background: #111;
+            border: 2px solid var(--term-color);
+            background: #000;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(51, 255, 0, 0.3);
         }
 
         #scores {
-            margin-bottom: 10px;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 1.2em;
         }
 
-        .terminal button {
-            display: block;
-            margin: 20px auto 0;
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            border-top: 1px dashed var(--term-dark);
+            margin-top: auto;
+            z-index: 10;
         }
     </style>
 </head>
+
 <body onload="initializeConnection()">
-    <header>
-        <h1>Retroactivos</h1>
-        <p>Un tributo retro inspirado en 'Juegos de Guerra'</p>
-    </header>
+    <div class="crt-overlay"></div>
+    <div class="scanline"></div>
 
-    <div class="terminal">
-        <p>BIENVENIDO AL SISTEMA RETROACTIVOS</p>
-        <div class="dialogue" id="dialogue-box"></div>
-        <div class="input-line">
-            <input id="command-input" type="text" placeholder="Escribe tu respuesta" onkeypress="handleKeyPress(event)">
-            <button onclick="processDialogue()">Enviar</button>
-        </div>
-        <button onclick="showSnakeGame()">Jugar Snake</button>
-    </div>
+    <div class="screen">
+        <header>
+            <h1 class="text-logo">RETROACTIVOS</h1>
+            <p>BBS / Terminal Mode</p>
+        </header>
 
+        <div class="terminal">
+            <div class="dialogue" id="dialogue-box">
+                <p>INICIANDO SECUENCIA BOOT...</p>
+            </div>
+
+            <div class="input-line" onclick="document.getElementById('command-input').focus()">
+                <div class="prompt">WOPR&gt;</div>
+                <div class="fake-input" id="fake-input"></div>
+                <div class="cursor"></div>
+                <input id="command-input" type="text" autocomplete="off" onkeypress="handleKeyPress(event)"
+                    oninput="updateFakeInput()">
+            </div>
+        </div> <!-- End screen -->
+        <p>
+            Desarrollado por omrpps - <a href="https://www.linkedin.com/in/oscar-martinez-43327686/"
+                target="_blank">LinkedIn</a> | <a href="mailto:omrpps@gmail.com">Correo</a>
+        </p>
+        <p>
+            Contacto Retroactivos - <a href="https://x.com/retroactivos72" target="_blank">Twitter</a> | <a
+                href="mailto:retroactivos72@gmail.com">Correo</a>
+        </p>
+        </footer>
+    </div> <!-- End screen -->
+
+    <!-- Modals -->
     <div class="cookie-banner" id="cookie-banner">
-        <p>Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas su uso. Para más información, consulta nuestra <a href="#" onclick="showPrivacyPolicy()">Política de Privacidad</a>.</p>
+        <p>CONEXIÓN: Utilizamos cookies para mejorar el seguimiento de terminal. <a href="#"
+                onclick="showPrivacyPolicy()">[POLÍTICA DE PRIVACIDAD]</a>.</p>
         <div>
-            <button onclick="acceptCookies()">Aceptar</button>
-            <button onclick="showCookieSettings()">Configurar</button>
+            <button onclick="acceptCookies()">[ACEPTAR]</button>
+            <button onclick="showCookieSettings()">[AJUSTES]</button>
         </div>
     </div>
 
     <div class="cookie-settings" id="cookie-settings">
-        <p><strong>Configuración de Cookies</strong></p>
-        <p>Selecciona las cookies que deseas activar:</p>
+        <p><strong>>>> CONFIGURACIÓN DE NÚCLEO (COOKIES)</strong></p>
+        <p>Selecciona los módulos a activar:</p>
         <form>
-            <label><input type="checkbox" id="essential-cookies" checked disabled> Cookies esenciales (requeridas)</label><br>
-            <label><input type="checkbox" id="analytics-cookies"> Cookies analíticas</label><br>
-            <label><input type="checkbox" id="marketing-cookies"> Cookies de marketing</label><br>
+            <label><input type="checkbox" id="essential-cookies" checked disabled> Módulo base
+                (Requerido)</label><br><br>
+            <label><input type="checkbox" id="analytics-cookies"> Módulo de telemetría (Análisis)</label><br><br>
+            <label><input type="checkbox" id="marketing-cookies"> Módulo de publicidad</label><br>
         </form>
-        <button onclick="saveCookieSettings()">Guardar</button>
-        <button onclick="closeCookieSettings()">Cancelar</button>
+        <br>
+        <button onclick="saveCookieSettings()">[GUARDAR]</button>
+        <button onclick="closeCookieSettings()">[CANCELAR]</button>
     </div>
 
     <div class="privacy-policy" id="privacy-policy">
-        <p><strong>Política de Privacidad</strong></p>
-        <p>1. Este sitio utiliza cookies para mejorar la experiencia del usuario y análisis.</p>
-        <p>2. Los datos recopilados se procesan de forma anónima y nunca se compartirán sin consentimiento.</p>
-        <p>3. Tienes derecho a acceder, modificar y eliminar tus datos personales.</p>
-        <p>4. Para más detalles o consultas, contacta a: <a href="mailto:retroactivos72@gmail.com">retroactivos72@gmail.com</a> o en nuestro Twitter: <a href="https://x.com/retroactivos72" target="_blank">@retroactivos72</a>.</p>
-        <button onclick="closePrivacyPolicy()">Cerrar</button>
+        <p><strong>>>> ARCHIVO CONFIDENCIAL: PRIVACIDAD</strong></p>
+        <p>1. Esta BBS usa cookies para monitoreo de sesión.</p>
+        <p>2. Los registros son anónimos. No se permite la sustracción de datos sin autorización previa de WOPR.</p>
+        <p>3. Permisos de alteración o borrado de memoria están habilitados según el protocolo de usuario.</p>
+        <p>4. Transmisiones y contacto: <a href="mailto:retroactivos72@gmail.com">retroactivos72@gmail.com</a> o vía <a
+                href="https://x.com/retroactivos72" target="_blank">@retroactivos72</a>.</p>
+        <button onclick="closePrivacyPolicy()">[CERRAR]</button>
     </div>
-
-    <div class="snake-game" id="snake-game">
-        <p><strong>Snake Game</strong></p>
-        <div id="scores">
-            <p>Puntuación: <span id="current-score">0</span></p>
-            <p>Récord: <span id="high-score">0</span></p>
-        </div>
-        <canvas id="gameCanvas" width="300" height="300"></canvas>
-        <p>Usa el teclado o toca la pantalla para controlar la serpiente.</p>
-        <button onclick="closeSnakeGame()">Cerrar</button>
-    </div>
-
-    <footer>
-        <p>
-            Desarrollado por omrpps - <a href="https://www.linkedin.com/in/oscar-martinez-43327686/" target="_blank">Twitter</a> | <a href="mailto:omrpps@gmail.com">Correo</a>
-        </p><p>
-            Contacto Retroactivos - <a href="https://x.com/retroactivos72" target="_blank">Twitter</a> | <a href="mailto:retroactivos72@gmail.com">Correo</a>
-        </p>
-    </footer>
 
     <audio id="beep" class="sound-effect" src="sound/beep.mp3"></audio>
 
     <script>
-        // Incluye aquí el script proporcionado anteriormente.
         const dialogueBox = document.getElementById('dialogue-box');
-const cookieBanner = document.getElementById('cookie-banner');
-const cookieSettings = document.getElementById('cookie-settings');
-const privacyPolicy = document.getElementById('privacy-policy');
-const snakeGame = document.getElementById('snake-game');
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+        const cookieBanner = document.getElementById('cookie-banner');
+        const cookieSettings = document.getElementById('cookie-settings');
+        const privacyPolicy = document.getElementById('privacy-policy');
+        const commandInput = document.getElementById('command-input');
+        const fakeInputUI = document.getElementById('fake-input');
 
-let snake;
-let food;
-let dx;
-let dy;
-let gameLoop;
-let score = 0;
-let highScore = localStorage.getItem('highScore') || 0;
+        let isTyping = false;
+        let typeQueue = [];
 
-function initializeConnection() {
-    addDialogue("Sistema", "Conectando al servidor...");
-    setTimeout(() => {
-        addDialogue("Sistema", "Conexión establecida. Bienvenido, humano.");
-    }, 3000);
-}
-
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        processDialogue();
-    }
-}
-
-function processDialogue() {
-    const input = document.getElementById('command-input');
-    const command = input.value.trim().toLowerCase();
-    const beep = document.getElementById('beep');
-
-    beep.play();
-    clearDialogue();
-
-    if (command.includes('ayuda')) {
-        addDialogue("WOPR", "Perfecto, ¿quieres información sobre nuestros juegos, reseñas o noticias?");
-    } else if (command.includes('juegos')) {
-        addDialogue("WOPR", "Tenemos tres proyectos destacados:");
-        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/pentio' target='_blank'>Pentio</a>");
-        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/the-last-magic-forest' target='_blank'>The Last Magic Forest</a>");
-        addDialogue("WOPR", "<a href='https://retroactivos.itch.io/time' target='_blank'>Time (Cancelado)</a>");
-    } else if (command.includes('reseñas')) {
-        addDialogue("WOPR", "Puedes leer reseñas de nuestros proyectos aquí:");
-        addDialogue("WOPR", "- Ready and Play: <a href='https://www.readyandplay.com/the-last-magic-forest-lo-nuevo-de-retroactivos/' target='_blank'>Ready and Play</a>");
-        addDialogue("WOPR", "- Indie Retro News: <a href='https://www.indieretronews.com/2018/05/the-last-magic-forest-magical-kid-wiz.html' target='_blank'>Indie Retro News</a>");
-        addDialogue("WOPR", "- MSX Blog: <a href='https://www.msxblog.es/the-last-magic-forest-un-tributo-a-magical-kid-wiz/' target='_blank'>MSX Blog</a>");
-        addDialogue("WOPR", "- Retroorama: <a href='https://retroorama.blogspot.com/2018/11/indie-review-last-magic-forest.html' target='_blank'>Retroorama</a>");
-        addDialogue("WOPR", "- Retromaniac Magazine: <a href='https://www.retromaniacmagazine.com/2018/05/the-last-magic-forest-un-pequeno.html' target='_blank'>Retromaniac Magazine</a>");
-        addDialogue("WOPR", "- Postureo Cántabro: <a href='https://postureocantabro.com/pentio-el-videojuego-de-las-guerras-cantabras/' target='_blank'>Postureo Cántabro</a>");
-    } else if (command.includes('noticias')) {
-        addDialogue("WOPR", "Consulta las últimas noticias sobre Retroactivos:");
-        addDialogue("WOPR", "- El Diario Montañés: <a href='https://www.eldiariomontanes.es/tecnologia/videojuegos-serio-20170908120644-nt.html' target='_blank'>Videojuegos en Serio</a>");
-        addDialogue("WOPR", "- El Diario Montañés: <a href='https://www.eldiariomontanes.es/tecnologia/seis-estudios-retratan-20170908122221-nt.html' target='_blank'>Seis Estudios Retratan</a>");
-        addDialogue("WOPR", "- Cantabria Económica: <a href='https://www.cantabriaeconomica.com/empresas/la-industria-cantabra-del-videojuego-se-une-para-crecer/' target='_blank'>La Industria del Videojuego en Cantabria</a>");
-    } else if (command.includes('adios')) {
-        addDialogue("WOPR", "Adiós, humano. ¡Gracias por explorar Retroactivos!");
-    } else if (command.includes('privacidad')) {
-        showPrivacyPolicy();
-    } else {
-        addDialogue("WOPR", "No entiendo tu respuesta. Prueba con: 'juegos', 'reseñas', 'noticias', 'adios', 'ayuda' o 'privacidad'.");
-    }
-
-    input.value = '';
-}
-
-function addDialogue(speaker, text) {
-    const newLine = document.createElement('p');
-    newLine.innerHTML = `<strong>${speaker}:</strong> ${text}`;
-    dialogueBox.appendChild(newLine);
-    dialogueBox.scrollTop = dialogueBox.scrollHeight;
-}
-
-function clearDialogue() {
-    dialogueBox.innerHTML = '';
-}
-
-function showPrivacyPolicy() {
-    privacyPolicy.style.display = 'block';
-}
-
-function closePrivacyPolicy() {
-    privacyPolicy.style.display = 'none';
-}
-
-function acceptCookies() {
-    cookieBanner.style.display = 'none';
-    addDialogue("WOPR", "Gracias por aceptar las cookies. Disfruta navegando por Retroactivos.");
-}
-
-function showCookieSettings() {
-    cookieSettings.style.display = 'block';
-}
-
-function closeCookieSettings() {
-    cookieSettings.style.display = 'none';
-}
-
-function saveCookieSettings() {
-    const analytics = document.getElementById('analytics-cookies').checked;
-    const marketing = document.getElementById('marketing-cookies').checked;
-
-    let message = 'Has actualizado tus preferencias de cookies:\n';
-    message += `- Cookies analíticas: ${analytics ? 'Activadas' : 'Desactivadas'}\n`;
-    message += `- Cookies de marketing: ${marketing ? 'Activadas' : 'Desactivadas'}\n`;
-
-    alert(message);
-    closeCookieSettings();
-}
-
-function showSnakeGame() {
-    snakeGame.style.display = 'block';
-    initializeSnakeGame();
-}
-
-function closeSnakeGame() {
-    snakeGame.style.display = 'none';
-    clearInterval(gameLoop);
-}
-
-function initializeSnakeGame() {
-    snake = [{ x: 150, y: 150 }];
-    food = { x: 0, y: 0 };
-    dx = 10;
-    dy = 0;
-    score = 0;
-
-    document.getElementById('current-score').innerText = score;
-    document.getElementById('high-score').innerText = highScore;
-
-    placeFood();
-    gameLoop = setInterval(updateGame, 100);
-
-    document.addEventListener('keydown', changeDirection);
-    canvas.addEventListener('click', moveSnakeTouch);
-}
-
-function updateGame() {
-    moveSnake();
-    if (checkCollision()) {
-        alert(`¡Game Over!\nPuntuación: ${score}\nRécord: ${highScore}`);
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('highScore', highScore);
+        function updateFakeInput() {
+            fakeInputUI.textContent = commandInput.value.toUpperCase();
         }
-        closeSnakeGame();
-    }
-    drawGame();
 
-    document.getElementById('current-score').innerText = score;
-    document.getElementById('high-score').innerText = highScore;
-}
-
-function moveSnake() {
-    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-    snake.unshift(head);
-    if (head.x === food.x && head.y === food.y) {
-        score += 10;
-        placeFood();
-    } else {
-        snake.pop();
-    }
-}
-
-function checkCollision() {
-    const head = snake[0];
-    return (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height ||
-        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-    );
-}
-
-function placeFood() {
-    food.x = Math.floor(Math.random() * (canvas.width / 10)) * 10;
-    food.y = Math.floor(Math.random() * (canvas.height / 10)) * 10;
-}
-
-function drawGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = '#00ff00';
-    snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, 10, 10);
-    });
-
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(food.x, food.y, 10, 10);
-}
-
-function changeDirection(event) {
-    const key = event.key;
-
-    if (key === 'ArrowUp' && dy === 0) {
-        dx = 0;
-        dy = -10;
-    } else if (key === 'ArrowDown' && dy === 0) {
-        dx = 0;
-        dy = 10;
-    } else if (key === 'ArrowLeft' && dx === 0) {
-        dx = -10;
-        dy = 0;
-    } else if (key === 'ArrowRight' && dx === 0) {
-        dx = 10;
-        dy = 0;
-    }
-}
-
-function moveSnakeTouch(event) {
-    // Implementación futura para controles táctiles
-    const rect = canvas.getBoundingClientRect();
-    const touchX = event.clientX - rect.left; // Coordenada X del toque relativo al canvas
-    const touchY = event.clientY - rect.top; // Coordenada Y del toque relativo al canvas
-
-    const head = snake[0];
-
-    // Detectar la dirección del toque respecto a la cabeza de la serpiente
-    const diffX = touchX - head.x;
-    const diffY = touchY - head.y;
-
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        // Movimiento horizontal
-        if (diffX > 0 && dx === 0) {
-            dx = 10;
-            dy = 0;
-        } else if (diffX < 0 && dx === 0) {
-            dx = -10;
-            dy = 0;
+        function focusInput() {
+            commandInput.focus();
         }
-    } else {
-        // Movimiento vertical
-        if (diffY > 0 && dy === 0) {
-            dx = 0;
-            dy = 10;
-        } else if (diffY < 0 && dy === 0) {
-            dx = 0;
-            dy = -10;
-        }
-    }
-}
 
-// Agregar el evento táctil al canvas
-canvas.addEventListener('touchstart', (event) => {
-    event.preventDefault(); // Prevenir scrolling mientras se juega
-    const touch = event.touches[0];
-    moveSnakeTouch(touch);
-});
+        // Keep input focused when clicking almost anywhere
+        document.querySelector('.screen').addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'CANVAS') {
+                focusInput();
+            }
+        });
+
+        function initializeConnection() {
+            setTimeout(() => {
+                addDialogue("SISTEMA", "ESTABLECIENDO CONEXIÓN SEGURA...");
+            }, 500);
+
+            setTimeout(() => {
+                addDialogue("WOPR", "SALUDOS, PROFESOR FALKEN.");
+                addDialogue("WOPR", "¿A QUÉ JUEGO DESEA JUGAR HOY? (Escriba 'ayuda')");
+                focusInput();
+            }, 2500);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                processDialogue();
+            }
+        }
+
+        function playBeep() {
+            const beep = document.getElementById('beep');
+            beep.volume = 0.5;
+            beep.currentTime = 0;
+            beep.play().catch(e => console.log('Audio autoplay prevented'));
+        }
+
+        function processDialogue() {
+            if (isTyping) return; // Prevent spamming while typing
+
+            const commandRaw = commandInput.value.trim();
+            const command = commandRaw.toLowerCase();
+
+            if (!command) return;
+
+            playBeep();
+
+            // Add user command to screen
+            addDialogue("USUARIO", commandRaw.toUpperCase(), true);
+
+            commandInput.value = '';
+            updateFakeInput();
+
+            if (command.includes('ayuda') || command.includes('help')) {
+                addDialogue("WOPR", "COMANDOS DISPONIBLES: [JUEGOS] - [RESEÑAS] - [NOTICIAS] - [PRIVACIDAD] - [ADIOS]", false);
+            } else if (command.includes('juegos')) {
+                addDialogue("WOPR", "TENEMOS TRES PROYECTOS EN LA BASE DE DATOS:", false);
+                addDialogue("WOPR", "- <a href='https://retroactivos.itch.io/pentio' target='_blank'>PENTIO</a>", true);
+                addDialogue("WOPR", "- <a href='https://retroactivos.itch.io/the-last-magic-forest' target='_blank'>THE LAST MAGIC FOREST</a>", true);
+                addDialogue("WOPR", "- <a href='https://retroactivos.itch.io/time' target='_blank'>TIME (CANCELADO)</a>", true);
+            } else if (command.includes('reseñas') || command.includes('resenas') || command.includes('review')) {
+                addDialogue("WOPR", "ACCEDIENDO A RESEÑAS GLOBALES:", false);
+                addDialogue("WOPR", "- READY AND PLAY: <a href='https://www.readyandplay.com/the-last-magic-forest-lo-nuevo-de-retroactivos/' target='_blank'>[VER]</a>", true);
+                addDialogue("WOPR", "- INDIE RETRO NEWS: <a href='https://www.indieretronews.com/2018/05/the-last-magic-forest-magical-kid-wiz.html' target='_blank'>[VER]</a>", true);
+                addDialogue("WOPR", "- MSX BLOG: <a href='https://www.msxblog.es/the-last-magic-forest-un-tributo-a-magical-kid-wiz/' target='_blank'>[VER]</a>", true);
+                addDialogue("WOPR", "- RETROORAMA: <a href='https://retroorama.blogspot.com/2018/11/indie-review-last-magic-forest.html' target='_blank'>[VER]</a>", true);
+                addDialogue("WOPR", "- RETROMANIAC MAGAZINE: <a href='https://www.retromaniacmagazine.com/2018/05/the-last-magic-forest-un-pequeno.html' target='_blank'>[VER]</a>", true);
+                addDialogue("WOPR", "- POSTUREO CÁNTABRO: <a href='https://postureocantabro.com/pentio-el-videojuego-de-las-guerras-cantabras/' target='_blank'>[VER]</a>", true);
+            } else if (command.includes('noticias')) {
+                addDialogue("WOPR", "DESCARGANDO NOTICIAS DE LA RED DE DATOS:", false);
+                addDialogue("WOPR", "- EL DIARIO MONTAÑÉS (Videojuegos en Serio): <a href='https://www.eldiariomontanes.es/tecnologia/videojuegos-serio-20170908120644-nt.html' target='_blank'>[LEER]</a>", true);
+                addDialogue("WOPR", "- EL DIARIO MONTAÑÉS (Seis Estudios Retratan): <a href='https://www.eldiariomontanes.es/tecnologia/seis-estudios-retratan-20170908122221-nt.html' target='_blank'>[LEER]</a>", true);
+                addDialogue("WOPR", "- CANTABRIA ECONÓMICA: <a href='https://www.cantabriaeconomica.com/empresas/la-industria-cantabra-del-videojuego-se-une-para-crecer/' target='_blank'>[LEER]</a>", true);
+            } else if (command.includes('adios') || command.includes('exit') || command.includes('quit')) {
+                addDialogue("WOPR", "DESCONECTANDO... ADIÓS, HUMANO.", false);
+                setTimeout(() => {
+                    document.body.innerHTML = "<h1 style='color:#33ff00; text-align:center; margin-top:20%; font-family:monospace'>CARRIER LOST [NO CARRIER]</h1>";
+                }, 3000);
+            } else if (command.includes('privacidad')) {
+                addDialogue("WOPR", "EJECUTANDO SCRIPT DE PRIVACIDAD...", false);
+                setTimeout(showPrivacyPolicy, 1500);
+            } else if (command.includes('clear') || command.includes('cls')) {
+                clearDialogue();
+            } else {
+                addDialogue("WOPR", "ERROR DE SINTAXIS. COMANDO NO RECONOCIDO.", false);
+            }
+        }
+
+        function addDialogue(speaker, text, isImmediateHTML = false) {
+            if (isImmediateHTML) {
+                const newLine = document.createElement('p');
+                newLine.innerHTML = `<span style="color:#fff">[${speaker}]</span> ${text}`;
+                dialogueBox.appendChild(newLine);
+                scrollToBottom();
+            } else {
+                typeQueue.push({ speaker, text });
+                processTypeQueue();
+            }
+        }
+
+        function scrollToBottom() {
+            const screen = document.querySelector('.screen');
+            screen.scrollTop = screen.scrollHeight;
+            dialogueBox.scrollTop = dialogueBox.scrollHeight;
+        }
+
+        function processTypeQueue() {
+            if (isTyping || typeQueue.length === 0) return;
+            isTyping = true;
+
+            const { speaker, text } = typeQueue.shift();
+            const newLine = document.createElement('p');
+            newLine.innerHTML = `<span style="color:#fff">[${speaker}]</span> `;
+            dialogueBox.appendChild(newLine);
+
+            let i = 0;
+            // Randomize typing speed a bit to look real
+            function typeChar() {
+                if (i < text.length) {
+                    newLine.innerHTML += text.charAt(i);
+                    i++;
+                    scrollToBottom();
+                    let speed = Math.random() * 30 + 10;
+                    if (text.charAt(i - 1) === '.' || text.charAt(i - 1) === ',') speed += 150; // pause at punctuation
+                    setTimeout(typeChar, speed);
+                } else {
+                    isTyping = false;
+                    processTypeQueue();
+                }
+            }
+            typeChar();
+        }
+
+        function clearDialogue() {
+            dialogueBox.innerHTML = '';
+        }
+
+        function showPrivacyPolicy() { privacyPolicy.style.display = 'block'; }
+        function closePrivacyPolicy() { privacyPolicy.style.display = 'none'; focusInput(); }
+
+        function acceptCookies() {
+            cookieBanner.style.display = 'none';
+            addDialogue("SISTEMA", "MODULO DE COOKIES ACEPTADO.");
+        }
+
+        function showCookieSettings() { cookieSettings.style.display = 'block'; }
+        function closeCookieSettings() { cookieSettings.style.display = 'none'; focusInput(); }
+
+        function saveCookieSettings() {
+            const analytics = document.getElementById('analytics-cookies').checked;
+            const marketing = document.getElementById('marketing-cookies').checked;
+            let message = 'PREFERENCIAS DE NÚCLEO ACTUALIZADAS:\n';
+            message += `- TELEMETRÍA: ${analytics ? 'ONLINE' : 'OFFLINE'}\n`;
+            message += `- PUBLICIDAD: ${marketing ? 'ONLINE' : 'OFFLINE'}\n`;
+            alert(message);
+            closeCookieSettings();
+        }
 
     </script>
 </body>
+
 </html>
