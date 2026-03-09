@@ -4,7 +4,7 @@
 
 Una experiencia web de simulación de terminal retro, rindiendo tributo a los Bulletin Board Systems (BBS) de los años 80 y 90, e inspirada por la estética de "Juegos de Guerra" (WarGames).
 
-👉 **[Juega en vivo aquí: Retroactivos en GitHub Pages](https://omrpps.github.io/Retroactivos/)**
+👉 **[Juega en vivo aquí: Retroactivos en GitHub Pages]([https://omrpps.github.io/retroactivos/])**
 
 ## 💻 Características
 
@@ -35,4 +35,5 @@ Para interactuar con la terminal una vez conectado, asegúrate de utilizar el te
 
 ---
 > *¿A qué juego desea jugar hoy, Profesor Falken?*
+
 
